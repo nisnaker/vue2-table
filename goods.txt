@@ -1,0 +1,20 @@
+{
+	"fields": [
+		{"label": "ID", "name": "id"},
+		{"label": "商品名称", "name": "name"},
+		{"label": "价格", "name": "price"},
+		{"label": "状态", "name": "status"}
+	],
+	"tableData": [
+		{"id": 1, "name": "iPhone 7", "price": "7999", "status": 1},
+		{"id": 2, "name": "Galaxy Note 7", "price": "2300", "status": 0},
+		{"id": 3, "name": "iPhone 7", "price": "7999", "status": 1},
+		{"id": 4, "name": "Galaxy Note 7", "price": "2300", "status": 0},
+		{"id": 5, "name": "iPhone 7", "price": "7999", "status": 1},
+		{"id": 6, "name": "Galaxy Note 7", "price": "2300", "status": 0},
+		{"id": 7, "name": "iPhone 7", "price": "7999", "status": 1},
+		{"id": 8, "name": "Galaxy Note 7", "price": "2300", "status": 0},
+		{"id": 9, "name": "iPhone 7", "price": "7999", "status": 1},
+		{"id": 10, "name": "Galaxy Note 7", "price": "2300", "status": 0}
+	]
+}
