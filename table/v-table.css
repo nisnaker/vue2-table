@@ -1,12 +1,16 @@
-table.v-table {
-	box-sizing: content-box;
+.v-table {
 	margin: 0 auto;
 	clear: both;
+	font-size: 12px;
+
+}
+
+.v-table table {
+	box-sizing: content-box;
 	border-collapse: separate;
 	border-spacing: 0;
 	width: 100%;
 	text-align: left;
-	font-size: 12px;
 }
 
 .v-table tr.even, .v-table tr:nth-child(even) {
@@ -27,3 +31,22 @@ table.v-table {
 	border-bottom: 1px solid #bbb;
 }
 
+.v-pager {
+	padding-top: 10px;
+	float: right;
+	clear: both;
+}
+.v-pager span {
+	display: inline-block;
+	padding: 5px 8px;
+	margin-right: 6px;
+	border: 1px solid #ddd;
+	cursor: pointer;
+}
+.v-pager span:hover {
+	border-color: #888;
+}
+.v-pager span.cur {
+	border: none;
+	cursor: auto;
+}

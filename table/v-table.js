@@ -1,23 +1,94 @@
 (function () {
-	Vue.component('v-table', {
-		template: `<table class="v-table">
-			<tr><th v-for="field in fields">{{field.label}}</th></tr>
-			<tr v-for="row in tableData">
-				<td v-for="field in fields">
-					{{ '' | render(field, row)  }}
-					<template v-if="field.action">
-						<span v-for="(action_func, action_text) in field.action" @click.stop="fireAction(action_func, row, $event)">
-                            {{ action_text }}
-                        </span>
-					</template>
-				</td>
-			</tr>
-		</table>`,
+	var vPager = {
+		template: `<div class="v-pager">
+			<span v-for="num in pagers" @click.stop="goto(num)" :class="{'cur': num==currentPage}">
+				{{ num }}
+			</span> / {{ totalPage }}
+		</div>`,
 		props: {
-			dataUrl: {type: String, required: true},
+			totalCount: {type: [Number, String], required: true},
+			perPage: {type: [String, Number], required: true},
 		},
 		data: function () {
 			return {
+				totalPage: 0,
+				currentPage: 1,
+			};
+		},
+		computed: {
+			totalPage: function () {
+				return Math.floor(this.totalCount / this.perPage) + 1;
+			},
+			pagers: function () {
+				var arr = [];
+
+				if(1 != this.currentPage) {
+					arr.push('<<');
+					arr.push('<');
+				}
+
+				var start = Math.max(this.currentPage - 3, 1);
+				for (var i = 0; i < 7; i++) {
+					if(i + start > this.totalPage) break;
+					arr.push(i + start);
+				}
+
+				if(this.totalPage != this.currentPage) {
+					arr.push('>');
+					arr.push('>>');
+				}
+
+				return arr;
+			}
+		},
+		methods: {
+			goto: function (num) {
+				var map = {
+					'<<': 1,
+					'<': this.currentPage - 1,
+					'>': this.currentPage + 1,
+					'>>': this.totalPage,
+				};
+				if(map.hasOwnProperty(num)) {
+					num = map[num];
+				}
+
+				if(num != this.currentPage) {
+					this.$emit('turn', num);
+					this.currentPage = num;					
+				}
+			}
+		}
+	};
+
+	Vue.component('v-table', {
+		template: `<div class="v-table">
+			<table>
+				<tr><th v-for="field in fields">{{field.label}}</th></tr>
+				<tr v-for="row in tableData">
+					<td v-for="field in fields">
+						{{ '' | render(field, row)  }}
+						<template v-if="field.action">
+							<span v-for="(action_func, action_text) in field.action" @click.stop="fireAction(action_func, row, $event)">
+								{{ action_text }}
+							</span>
+						</template>
+					</td>
+				</tr>
+			</table>
+			<v-pager :total-count="totalCount" :per-page="perPage" v-on:turn="turn"></v-pager>
+		</div>`,
+		props: {
+			dataUrl: {type: String, required: true},
+			perPage: {type: [String, Number], default: 10},
+		},
+		components: {
+			'v-pager': vPager,
+		},
+		data: function () {
+			return {
+				totalCount: 0,
+				currentPage: 1,
 				fields: [],
 				tableData: [],
 			}
@@ -37,7 +108,7 @@
 		},
 		mounted: function () {
 			this.initFields();
-			this.getData(0);
+			this.getData();
 		},
 		methods: {
 			initFields: function () {
@@ -68,15 +139,19 @@
 				}
 				this.fields = _fields;
 			},
-			getData: function (page) {
-				this.$http.get(this.dataUrl).then( function(response)  {
-					var data = JSON.parse(response.body);
-					this.tableData = data.tableData;
+			getData: function () {
+				this.$http.get(this.dataUrl, {params: {'page': this.currentPage}}).then( function(response) {
+					this.tableData = response.data.data;
+					this.totalCount = response.data.totalCount;
 				});
 			},
 			fireAction: function (func, row, event) {
 				func(row['id']);
-			}
+			},
+			turn: function (num) {
+				this.currentPage = num;
+				this.getData();
+			},
 		}
 	});
 })();
