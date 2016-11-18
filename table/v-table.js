@@ -6,20 +6,15 @@
 			</span> / {{ totalPage }}
 		</div>`,
 		props: {
-			totalCount: {type: [Number, String], required: true},
-			perPage: {type: [String, Number], required: true},
-		},
-		data: function () {
-			return {
-				totalPage: 0,
-				currentPage: 1,
-			};
+			currentPage: {type: [String, Number]},
 		},
 		computed: {
 			totalPage: function () {
-				return Math.floor(this.totalCount / this.perPage) + 1;
+				return Math.ceil(this.$parent.totalCount / this.$parent.perPage);
 			},
 			pagers: function () {
+				if(0 == this.$parent.totalCount) return [];
+
 				var arr = [];
 
 				if(1 != this.currentPage) {
@@ -54,29 +49,94 @@
 				}
 
 				if(num != this.currentPage) {
-					this.$emit('turn', num);
-					this.currentPage = num;					
+					this.$parent.turn(num);
 				}
 			}
 		}
 	};
 
-	Vue.component('v-table', {
+	var vForm = {
+		template: `<div v-show="showForm" class="v-form">
+
+			<div class="v-mask"></div>
+			<div class="v-fields">
+				<p> {{ title }} </p>
+				<p v-for="field in formFields">
+					<label> {{ field.label }}:</label>
+					<span>
+						<input type="text" v-model="rowData[field.name]" />
+						<span>{{ errors[field.name] }}</span>
+					</span>
+				</p>
+				<p class="v-footer">
+					<span class="v-button v-save" @click="save">Save</span>
+					<span class="v-button v-cancel" @click="cancel">Cancel</span>
+				</p>
+			</div>
+		</div>`,
+		data: function () {
+			return {
+				showForm: false,
+				rowData: {},
+				errors: {},
+			}
+		},
+		methods: {
+			setData: function (row) {
+				this.rowData = JSON.parse(JSON.stringify(row));
+			},
+			setError: function (info) {
+				this.errors = JSON.parse(JSON.stringify(info));
+			},
+			save: function () {
+				this.errors = {};
+				this.$parent.saveData(this.rowData);
+			},
+			cancel: function () {
+				this.showForm = false;
+				this.rowData = {};
+				this.errors = {};
+			}
+		},
+		computed: {
+			formFields: function () {
+				var _arr = {};
+				for(i in this.$parent.fields) {
+					var _field = this.$parent.fields[i];
+					if('id' == _field.name) continue;
+					if(_field.hasOwnProperty('action')) continue;
+
+					_arr[i] = _field;
+				}
+				return _arr;
+			},
+			title: function () {
+				if(this.rowData.id) {
+					return 'Edit';
+				} else {
+					return 'New';
+				}
+			}
+		}
+	};
+
+	var vTable = {
 		template: `<div class="v-table">
+			<p><span class="v-button" @click.stop="create">New</span></p>
+
 			<table>
 				<tr><th v-for="field in fields">{{field.label}}</th></tr>
 				<tr v-for="row in tableData">
 					<td v-for="field in fields">
 						{{ '' | render(field, row)  }}
-						<template v-if="field.action">
-							<span v-for="(action_func, action_text) in field.action" @click.stop="fireAction(action_func, row, $event)">
+							<span class="v-action" v-for="(action_func, action_text) in field.action"  @click.stop="fireAction(action_func, row, $event)">
 								{{ action_text }}
 							</span>
-						</template>
 					</td>
 				</tr>
 			</table>
-			<v-pager :total-count="totalCount" :per-page="perPage" v-on:turn="turn"></v-pager>
+			<v-pager :current-page="currentPage"></v-pager>
+			<v-form ref="form"></v-form>
 		</div>`,
 		props: {
 			dataUrl: {type: String, required: true},
@@ -84,6 +144,7 @@
 		},
 		components: {
 			'v-pager': vPager,
+			'v-form': vForm,
 		},
 		data: function () {
 			return {
@@ -97,13 +158,12 @@
 			render: function (value, field, row) {
 				value = row[field.name];
 
-				// console.log(field)
 				if(field.hasOwnProperty('map')) {
 					return field.map[value];
 				} else if(field.hasOwnProperty('lambda')) {
 					return field.lambda(value, row);
 				}
-				return value
+				return value;
 			}
 		},
 		mounted: function () {
@@ -139,19 +199,51 @@
 				}
 				this.fields = _fields;
 			},
-			getData: function () {
-				this.$http.get(this.dataUrl, {params: {'page': this.currentPage}}).then( function(response) {
-					this.tableData = response.data.data;
-					this.totalCount = response.data.totalCount;
-				});
-			},
-			fireAction: function (func, row, event) {
-				func(row['id']);
-			},
 			turn: function (num) {
 				this.currentPage = num;
 				this.getData();
 			},
+			getData: function () {
+				this.$http.get(this.dataUrl, {params: {'page': this.currentPage, 'perPage': this.perPage}}).then( function(response) {
+					this.tableData = response.data.data;
+					this.totalCount = response.data.totalCount;
+				});
+			},
+			saveData: function (rowData) {
+				this.$http.post(this.dataUrl, rowData).then(function (response) {
+					if(0 == response.data.error) {
+						this.getData();
+						this.$refs.form.showForm = false;
+					} else {
+						this.$refs.form.setError(response.data.info);
+					}
+				})
+			},
+			removeData: function (id) {
+				this.$http.delete(this.dataUrl, {params: {'id': id}}).then(function (response) {
+					if(0 == response.data.error) {
+						this.getData();
+						this.$refs.form.showForm = false;
+					}
+				})
+			},
+			create: function () {
+				this.$refs.form.setData({});
+				this.$refs.form.showForm = true;
+			},
+			fireAction: function (func, rowData, event) {
+				var action = func(rowData['id']);
+				if('edit' == action) {
+					this.$refs.form.setData(rowData);
+					this.$refs.form.showForm = true;
+				} else if('remove' == action) {
+					if(confirm('Sure to remove?')) {
+						this.removeData(rowData['id']);
+					}
+				}
+			},
 		}
-	});
+	};
+
+	Vue.component('v-table', vTable);
 })();

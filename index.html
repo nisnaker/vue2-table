@@ -2,22 +2,20 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Document</title>
-	<!-- <script src="http://vuejs.org/js/vue.js"></script> -->
+	<title>vTable</title>
 	<script src="http://cdn.bootcss.com/vue/2.0.5/vue.js"></script>
 	<script src="http://cdn.bootcss.com/vue-resource/1.0.3/vue-resource.js"></script>
-	<!-- <link rel="stylesheet" href="style.css"> -->
 	<link rel="stylesheet" href="table/v-table.css">
 
 </head>
 <body>
 	<div id="tb">
-		<v-table data-url="/data.php">
+		<v-table data-url="/api.php">
 			<column label="ID" name="id" ></column>
 			<column label="商品名称" name="name" ></column>
 			<column label="价格" name="price" lambda="return row.name + ' - ' + value+'.00'" ></column>
-			<column label="状态" name="status" map="['上架', '下架']" ></column>
-			<column label="操作" action="{'查看': 'alert(\'see \' + id)', '删除': 'alert(\'remove \' + id)'}" ></column>
+			<column label="状态" name="status" map="['下架', '上架']" ></column>
+			<column label="操作" action="{'编辑': 'return `edit`', '查看': 'alert(`see ` + id)', '删除': 'return `remove`'}" ></column>
 		</v-table>
 	</div>
 	<script src="table/v-table.js"></script>

@@ -1,52 +1,93 @@
 .v-table {
-	margin: 0 auto;
-	clear: both;
-	font-size: 12px;
-
+  margin: 0 auto;
+  clear: both;
+  font-size: 12px;
 }
-
+.v-table span.v-button {
+  display: inline-block;
+  background-color: #ddd;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.v-table span.v-button:hover {
+  background-color: #d0d0d0;
+}
 .v-table table {
-	box-sizing: content-box;
-	border-collapse: separate;
-	border-spacing: 0;
-	width: 100%;
-	text-align: left;
+  box-sizing: content-box;
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  text-align: left;
 }
-
-.v-table tr.even, .v-table tr:nth-child(even) {
-	background-color: #fff;
+.v-table table tr.even, .v-table table tr:nth-child(even) {
+  background-color: #fff;
 }
-.v-table tr.odd,.v-table  tr:nth-child(odd) {
-	background-color: #f9f9f9;
+.v-table table tr.odd, .v-table table tr:nth-child(odd) {
+  background-color: #f9f9f9;
 }
-.v-table tr:hover {
-	background-color: #f0f0f0;
+.v-table table tr:hover {
+  background-color: #f5f5f5;
 }
-.v-table th {
-	background-color: #eee;
-	color: #666;
+.v-table table tr th, .v-table table tr td {
+  padding: 5px;
+  border-bottom: 1px solid #bbb;
 }
-.v-table th,.v-table  td {
-	padding: 5px;
-	border-bottom: 1px solid #bbb;
+.v-table table tr th {
+  background-color: #eee;
+  color: #666;
 }
-
-.v-pager {
-	padding-top: 10px;
-	float: right;
-	clear: both;
+.v-table table tr span.v-action {
+  cursor: pointer;
 }
-.v-pager span {
-	display: inline-block;
-	padding: 5px 8px;
-	margin-right: 6px;
-	border: 1px solid #ddd;
-	cursor: pointer;
+.v-table .v-pager {
+  padding: 10px;
+  text-align: right;
 }
-.v-pager span:hover {
-	border-color: #888;
+.v-table .v-pager span {
+  display: inline-block;
+  padding: 5px 8px;
+  margin-right: 6px;
+  border: 1px solid #ddd;
+  cursor: pointer;
 }
-.v-pager span.cur {
-	border: none;
-	cursor: auto;
+.v-table .v-pager span:hover {
+  border-color: #888;
+}
+.v-table .v-pager span.cur {
+  border: none;
+  cursor: auto;
+}
+.v-table .v-form .v-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9001;
+  background: rgba(0, 0, 0, 0.5);
+}
+.v-table .v-form .v-fields {
+  background-color: #fff;
+  width: 480px;
+  position: fixed;
+  left: 50%;
+  top: 2em;
+  margin-left: -240px;
+  z-index: 9002;
+  padding: 0 10px;
+}
+.v-table .v-form label {
+  display: inline-block;
+  text-align: right;
+  padding-right: 1em;
+  width: 10em;
+}
+.v-table .v-form label span {
+  display: inline-block;
+  text-align: left;
+  padding-right: 1em;
+  width: 10em;
+}
+.v-table .v-form .v-footer {
+  text-align: right;
 }
