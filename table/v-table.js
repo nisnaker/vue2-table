@@ -62,9 +62,26 @@
 			<div class="v-fields">
 				<p> {{ title }} </p>
 				<p v-for="field in formFields">
-					<label> {{ field.label }}:</label>
+					<label class="v-left"> {{ field.label }}:</label>
 					<span>
-						<input type="text" v-model="rowData[field.name]" />
+						<label v-if="'radio' == field.type" v-for="(v, k) in field.map">
+							<input type="radio" :name="field.name" :value="k" v-model="rowData[field.name]" /> {{ v }}
+						</label>
+
+						<label v-if="'checkbox' == field.type" v-for="(v, k) in field.map">
+							<input type="checkbox" :value="k" v-model="rowData[field.name]" /> {{ v }}
+						</label>
+
+						<label v-if="'select' == field.type">
+							<select v-model="rowData[field.name]">
+								<option v-for="(v, k) in field.map" :value="k">{{ v }}</option>
+							</select>
+						</label>
+
+						<label v-if="'text' == field.type || !field.type">
+							<input type="text" v-model="rowData[field.name]" />
+						</label>
+
 						<span>{{ errors[field.name] }}</span>
 					</span>
 				</p>
@@ -84,6 +101,17 @@
 		methods: {
 			setData: function (row) {
 				this.rowData = JSON.parse(JSON.stringify(row));
+				for(i in this.formFields) {
+					var _field = this.formFields[i], _name = _field.name;
+					var _default = _field.default;
+					if('checkbox' == _field.type) {
+						_default = _default.split('|');
+					}
+
+					if('undefined'  == typeof this.rowData[_name]) {
+						this.rowData[_name] = _default;
+					}
+				}
 			},
 			setError: function (info) {
 				this.errors = JSON.parse(JSON.stringify(info));
@@ -105,7 +133,7 @@
 					var _field = this.$parent.fields[i];
 					if('id' == _field.name) continue;
 					if(_field.hasOwnProperty('action')) continue;
-
+					_field.default = _field.default || '';
 					_arr[i] = _field;
 				}
 				return _arr;
@@ -129,7 +157,7 @@
 				<tr v-for="row in tableData">
 					<td v-for="field in fields">
 						{{ '' | render(field, row)  }}
-							<span class="v-action" v-for="(action_func, action_text) in field.action"  @click.stop="fireAction(action_func, row, $event)">
+							<span v-if="field.action" class="v-action" v-for="(action_func, action_text) in field.action"  @click.stop="fireAction(action_func, row, $event)">
 								{{ action_text }}
 							</span>
 					</td>
@@ -158,7 +186,13 @@
 			render: function (value, field, row) {
 				value = row[field.name];
 
-				if(field.hasOwnProperty('map')) {
+				if('checkbox' == field.type) {
+					var arr = [];
+					for(i in value) {
+						arr.push(field.map[value[i]])
+					}
+					return arr.join(', ')
+				} else if(field.hasOwnProperty('map')) {
 					return field.map[value];
 				} else if(field.hasOwnProperty('lambda')) {
 					return field.lambda(value, row);

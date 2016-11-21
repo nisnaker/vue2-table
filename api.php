@@ -68,7 +68,7 @@ class Api
 
 	private function validate($item)
 	{
-		foreach (['name', 'price', 'status'] as $field) {
+		foreach (['name', 'price', 'tags'] as $field) {
 			if(!isset($item[$field]) || !$item[$field]) {
 				$info[$field] = 'field required';
 			}
