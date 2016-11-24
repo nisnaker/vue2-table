@@ -1,4 +1,18 @@
 (function () {
+	var Utils = {
+		getJson: function (url) {
+			var _ = '', xhr = new XMLHttpRequest();
+			xhr.open('get', url, false);
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState === 4) {
+					_ =xhr.responseText;
+				}
+			}
+			xhr.send();
+			return JSON.parse(_);
+		}
+	};
+
 	var vPager = {
 		template: `<div class="v-pager">
 			<span v-for="num in pagers" @click.stop="goto(num)" :class="{'cur': num==currentPage}">
@@ -104,9 +118,6 @@
 				for(i in this.formFields) {
 					var _field = this.formFields[i], _name = _field.name;
 					var _default = _field.default;
-					if('checkbox' == _field.type) {
-						_default = _default.split('|');
-					}
 
 					if('undefined'  == typeof this.rowData[_name]) {
 						this.rowData[_name] = _default;
@@ -133,7 +144,6 @@
 					var _field = this.$parent.fields[i];
 					if('id' == _field.name) continue;
 					if(_field.hasOwnProperty('action')) continue;
-					_field.default = _field.default || '';
 					_arr[i] = _field;
 				}
 				return _arr;
@@ -224,9 +234,16 @@
 									action[k] = (new Function('id', action[k]))
 								}
 								_arr[j] = action;
+							} else if ('map-url' == j) {
+								_arr['map'] = Utils.getJson(attrs['map-url']);
 							} else {
 								_arr[j] = attrs[j];
 							}
+						}
+
+						_arr.default = _arr.default || '';
+						if('checkbox' == _arr.type) {
+							_arr.default = _arr.default.split('|');
 						}
 						_fields.push(_arr);
 					}
