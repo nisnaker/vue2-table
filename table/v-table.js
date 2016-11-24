@@ -164,6 +164,19 @@
 			<p><span class="v-button" @click.stop="create">New</span></p>
 
 			<table>
+				<tr><td v-for="field in fields">
+					<template v-if="field.filter">
+						<template v-if="field.map">
+							<select v-model="filters[field.name]['value']">
+								<option value="ALL">ALL</option>
+								<option v-for="(v, k) in field.map" :value="k">{{ v }}</option>
+							</select>
+						</template>
+						<template v-else>
+							<input type="text" v-model="filters[field.name]['value']" />
+						</template>
+					</template>
+				</td></tr>
 				<tr><th v-for="field in fields">{{field.label}}</th></tr>
 				<tr v-for="row in tableData">
 					<td v-for="field in fields">
@@ -195,6 +208,7 @@
 				fields: [],
 				actions: [],
 				tableData: [],
+				filters: {},
 			}
 		},
 		filters: {
@@ -217,7 +231,6 @@
 		},
 		mounted: function () {
 			this.initFields();
-			console.log(this.actions)
 			this.getData();
 		},
 		methods: {
@@ -231,17 +244,18 @@
 						var _arr = {}, attrs = child.data.attrs;
 						for(j in attrs) {
 							if('map' == j) {
-								_arr[j] = (new Function('return ' + attrs.map))();
+								_arr['map'] = (new Function('return ' + attrs.map))();
+								this.filters[attrs.name] = {type: 'equal', value: 'ALL'};
+								_arr['filter'] = this.filters[attrs.name];
 							} else if ('lambda' == j) {
-								_arr[j] = (new Function('value', 'row', attrs.lambda));
-							} else if ('action' == j) {
-								var action = (new Function('return ' + attrs.action))();
-								for(k in action) {
-									action[k] = (new Function('id', action[k]))
-								}
-								_arr[j] = action;
+								_arr['lambda'] = (new Function('value', 'row', attrs.lambda));
 							} else if ('map-url' == j) {
 								_arr['map'] = Utils.getJson(attrs['map-url']);
+								this.filters[attrs.name] = {type: 'equal', value:'ALL'};
+								_arr['filter'] = this.filters[attrs.name];
+							} else if('filter' == j) {
+								this.filters[attrs.name] = {type: attrs['filter']};
+								_arr['filter'] = this.filters[attrs.name];
 							} else {
 								_arr[j] = attrs[j];
 							}
@@ -273,7 +287,17 @@
 				this.getData();
 			},
 			getData: function () {
-				this.$http.get(this.dataUrl, {params: {'page': this.currentPage, 'perPage': this.perPage}}).then( function(response) {
+				var params = {
+					page: this.currentPage,
+					perPage: this.perPage,
+					filters: {}
+				};
+				for(i in this.filters) {
+					if(this.filters[i].value) {
+						params.filters[i] = this.filters[i];
+					}
+				}
+				this.$http.get(this.dataUrl, {params: params}).then( function(response) {
 					this.tableData = response.data.data;
 					this.totalCount = response.data.totalCount;
 				});
@@ -302,6 +326,7 @@
 			},
 			fireAction: function (func, rowData, event) {
 				console.log(rowData)
+				console.log(this.filters)
 				var action = func(rowData);
 				if('edit' == action) {
 					this.$refs.form.setData(rowData);

@@ -12,8 +12,8 @@
 	<div id="tb">
 		<v-table data-url="/api.php">
 			<column label="ID" name="id" ></column>
-			<column label="商品名称" name="name" default="name222" ></column>
-			<column label="价格" name="price" lambda="return row.name + ' - ' + value+'.00'" ></column>
+			<column label="商品名称" name="name" default="name222" filter="like" ></column>
+			<column label="价格" name="price" filter="equal" lambda="return row.name + ' - ' + value+'.00'" ></column>
 			<column label="标签" name="tags" map="{1:'tag1', 2:'tag2', 3:'tag3'}" map-url="/api.php?action=tags" type="checkbox" default="1|2" ></column>
 			<column label="状态" name="status" map="['下架', '上架']" type="select" default="0" ></column>
 			<column label="操作" type="action"></column>

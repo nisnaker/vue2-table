@@ -38,6 +38,7 @@
 }
 .v-table table tr span.v-action {
   cursor: pointer;
+  color: blue;
 }
 .v-table .v-pager {
   padding: 10px;
