@@ -10,6 +10,14 @@ class Api
 
 	public function run()
 	{
+		if(isset($_GET['action'])) {
+			$action = $_GET['action'];
+			$action = 'action' . ucfirst($action);
+			if(method_exists($this, $action)) {
+				return $this->$action();
+			}
+		}
+
 		$method = $_SERVER['REQUEST_METHOD'];
 		$method = strtolower($method);
 		$this->$method();
@@ -98,6 +106,17 @@ class Api
 		$file = 'data.php';
 		krsort($data);
 		file_put_contents($file, '<?php return ' . var_export($data, true) . ';');
+	}
+
+	private function actionTags()
+	{
+		header('Content-Type: application/json');
+
+		echo json_encode([
+			1 => 'tag11',
+			2 => 'tag22',
+			3 => 'tag33',
+		]);
 	}
 
 	private function initData()

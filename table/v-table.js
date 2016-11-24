@@ -1,6 +1,7 @@
 (function () {
 	var Utils = {
 		getJson: function (url) {
+			// https://github.com/littleBlack520/ajax
 			var _ = '', xhr = new XMLHttpRequest();
 			xhr.open('get', url, false);
 			xhr.onreadystatechange = function() {
@@ -143,7 +144,7 @@
 				for(i in this.$parent.fields) {
 					var _field = this.$parent.fields[i];
 					if('id' == _field.name) continue;
-					if(_field.hasOwnProperty('action')) continue;
+					if('action' == _field.type) continue;
 					_arr[i] = _field;
 				}
 				return _arr;
@@ -166,10 +167,13 @@
 				<tr><th v-for="field in fields">{{field.label}}</th></tr>
 				<tr v-for="row in tableData">
 					<td v-for="field in fields">
+						<template v-if="'action' != field.type">
 						{{ '' | render(field, row)  }}
-							<span v-if="field.action" class="v-action" v-for="(action_func, action_text) in field.action"  @click.stop="fireAction(action_func, row, $event)">
-								{{ action_text }}
-							</span>
+						</template>
+						<template v-else v-for="(action, index) in actions">
+							<template v-if="0 != index"> / </template>
+							<span class="v-action" @click.stop="fireAction(action.lambda, row, $event)">{{ action.text }}</span>
+						</template>
 					</td>
 				</tr>
 			</table>
@@ -189,6 +193,7 @@
 				totalCount: 0,
 				currentPage: 1,
 				fields: [],
+				actions: [],
 				tableData: [],
 			}
 		},
@@ -212,12 +217,13 @@
 		},
 		mounted: function () {
 			this.initFields();
+			console.log(this.actions)
 			this.getData();
 		},
 		methods: {
 			initFields: function () {
 				if(this.fields.length > 0) return;
-				var _fields = [], child;
+				var _fields = [], _actions = [], child;
 
 				for(i in this.$slots.default) {
 					child = this.$slots.default[i];
@@ -246,9 +252,21 @@
 							_arr.default = _arr.default.split('|');
 						}
 						_fields.push(_arr);
+					} else if ('action' == child.tag) {
+						var _arr = {}, attrs = child.data.attrs;
+						for(j in attrs) {
+							if ('lambda' == j) {
+								_arr[j] = (new Function('rowData', attrs.lambda));
+							} else {
+								_arr[j] = attrs[j];
+							}
+						}
+						_actions.push(_arr);
 					}
+
 				}
 				this.fields = _fields;
+				this.actions = _actions;
 			},
 			turn: function (num) {
 				this.currentPage = num;
@@ -283,7 +301,8 @@
 				this.$refs.form.showForm = true;
 			},
 			fireAction: function (func, rowData, event) {
-				var action = func(rowData['id']);
+				console.log(rowData)
+				var action = func(rowData);
 				if('edit' == action) {
 					this.$refs.form.setData(rowData);
 					this.$refs.form.showForm = true;
