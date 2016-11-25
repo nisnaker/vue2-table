@@ -33,6 +33,7 @@ class Api
 		echo json_encode([
 			'totalCount' => count($data),
 			'data' => array_slice($data, $offset, $len),
+			'counter' => $_GET['counter'],
 		]);
 	}
 

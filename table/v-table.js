@@ -14,6 +14,26 @@
 		}
 	};
 
+	var vFilter = {
+		template: `<tr>
+			<td v-for="field in $parent.fields">
+				<template v-if="field.filter">
+					<template v-if="field.map">
+						<select v-model="$parent.filters[field.name]['value']">
+							<option value="ALL">ALL</option>
+							<option v-for="(v, k) in field.map" :value="k">{{ v }}</option>
+						</select>
+					</template>
+					<template v-else>
+						<input type="text" v-model="$parent.filters[field.name]['value']" />
+					</template>
+				</template>
+
+				<span v-if="'action' == field.type" class="v-button" @click.stop="$parent.turn(1)">筛选</span>
+			</td>
+		</tr>`,
+	};
+
 	var vPager = {
 		template: `<div class="v-pager">
 			<span v-for="num in pagers" @click.stop="goto(num)" :class="{'cur': num==currentPage}">
@@ -164,24 +184,12 @@
 			<p><span class="v-button" @click.stop="create">New</span></p>
 
 			<table>
-				<tr><td v-for="field in fields">
-					<template v-if="field.filter">
-						<template v-if="field.map">
-							<select v-model="filters[field.name]['value']">
-								<option value="ALL">ALL</option>
-								<option v-for="(v, k) in field.map" :value="k">{{ v }}</option>
-							</select>
-						</template>
-						<template v-else>
-							<input type="text" v-model="filters[field.name]['value']" />
-						</template>
-					</template>
-				</td></tr>
+				<v-filter></v-filter>
 				<tr><th v-for="field in fields">{{field.label}}</th></tr>
 				<tr v-for="row in tableData">
 					<td v-for="field in fields">
 						<template v-if="'action' != field.type">
-						{{ '' | render(field, row)  }}
+						{{ render(field, row)  }}
 						</template>
 						<template v-else v-for="(action, index) in actions">
 							<template v-if="0 != index"> / </template>
@@ -198,6 +206,7 @@
 			perPage: {type: [String, Number], default: 10},
 		},
 		components: {
+			'v-filter': vFilter,
 			'v-pager': vPager,
 			'v-form': vForm,
 		},
@@ -209,24 +218,8 @@
 				actions: [],
 				tableData: [],
 				filters: {},
-			}
-		},
-		filters: {
-			render: function (value, field, row) {
-				value = row[field.name];
-
-				if('checkbox' == field.type) {
-					var arr = [];
-					for(i in value) {
-						arr.push(field.map[value[i]])
-					}
-					return arr.join(', ')
-				} else if(field.hasOwnProperty('map')) {
-					return field.map[value];
-				} else if(field.hasOwnProperty('lambda')) {
-					return field.lambda(value, row);
-				}
-				return value;
+				requestCounter: 0,
+				responseCounter: 0,
 			}
 		},
 		mounted: function () {
@@ -282,6 +275,22 @@
 				this.fields = _fields;
 				this.actions = _actions;
 			},
+			render: function (field, row) {
+				var value = row[field.name];
+
+				if('checkbox' == field.type) {
+					var arr = [];
+					for(i in value) {
+						arr.push(field.map[value[i]])
+					}
+					return arr.join(', ')
+				} else if(field.hasOwnProperty('map')) {
+					return field.map[value];
+				} else if(field.hasOwnProperty('lambda')) {
+					return field.lambda(value, row);
+				}
+				return value;
+			},
 			turn: function (num) {
 				this.currentPage = num;
 				this.getData();
@@ -290,7 +299,8 @@
 				var params = {
 					page: this.currentPage,
 					perPage: this.perPage,
-					filters: {}
+					filters: {},
+					counter: ++this.requestCounter,
 				};
 				for(i in this.filters) {
 					if(this.filters[i].value) {
@@ -298,6 +308,10 @@
 					}
 				}
 				this.$http.get(this.dataUrl, {params: params}).then( function(response) {
+					var responseCounter = parseInt(response.data.counter);
+					if(responseCounter < this.responseCounter) return;
+
+					this.responseCounter = responseCounter;
 					this.tableData = response.data.data;
 					this.totalCount = response.data.totalCount;
 				});
